@@ -1,6 +1,6 @@
 # ASL3 Smart Announce
 
-This shell script automates playing periodic announcements on an AllStarLink 3 (ASL3) node. It monitors node activity and plays WAV files only when the node is idle, selecting randomly from a list of announcements.
+This shell script automates playing periodic announcements, in a random order, on an AllStarLink 3 (ASL3) node without the need for creating macros and schedules in the rpt.conf file. It monitors node activity and plays WAV files only when the node is idle, selecting randomly from a list of announcements.
 
 ---
 
