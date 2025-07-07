@@ -1,48 +1,43 @@
 #!/bin/bash
 
-########################
-#  USER CONFIGURATION  #
-########################
+NODE=64549
+WAVFILE=/var/lib/asterisk/sounds/triathlon2025  # No .wav extension for rpt localplay
+CHECK_INTERVAL=60                                # seconds between idle checks
+SLEEP_BETWEEN_PLAYS=$((60 * 60))                 # 1 hour between plays
 
-LOGFILE="/var/log/ASL3-smart-announce.log"
-NODE=64393
-
-# List of active WAV base names (no ".wav", relative to /var/lib/asterisk/sounds/custom)
-WAV_FILES=(
-    "ID"
-    "ID2"
-    "cowboy"
-    "jessica"
-)
-
-SLEEP_SECS=900
-LAST_MINUTE_PLAYED=""
-
-########################
-#     MAIN  LOOP       #
-########################
+# Allowed play window: 7:30 AM to 7:30 PM
+START_HOUR=7
+START_MINUTE=30
+END_HOUR=19
+END_MINUTE=30
 
 while true; do
-    CURRENT_MINUTE=$(date +"%M")
+  # Get current time in minutes since midnight
+  CURRENT_MINUTES=$(date +%H:%M | awk -F: '{ print ($1 * 60) + $2 }')
+  START_MINUTES=$((START_HOUR * 60 + START_MINUTE))
+  END_MINUTES=$((END_HOUR * 60 + END_MINUTE))
 
-    if [ "$CURRENT_MINUTE" != "$LAST_MINUTE_PLAYED" ]; then
-        ACTIVE=$(asterisk -rx "core show channels concise" | grep -c '\bRPT')
+  if (( CURRENT_MINUTES >= START_MINUTES && CURRENT_MINUTES <= END_MINUTES )); then
+    echo "$(date): Within allowed play window."
 
-        if [ "$ACTIVE" -eq 0 ]; then
-            # Pick a random index from the WAV_FILES array
-            COUNT=${#WAV_FILES[@]}
-            INDEX=$((RANDOM % COUNT))
-            WAV_PICK="${WAV_FILES[$INDEX]}"
+    # Wait until the repeater is not RX keyed
+    while true; do
+      RXKEYED=$(asterisk -rx "rpt show variables $NODE" | grep RPT_RXKEYED | awk -F= '{print $2}' | tr -d '\r')
+      RXKEYED=${RXKEYED:-1}  # default to 1 (busy) if parsing fails
 
-            echo "$(date '+%F %T') Node $NODE idle — playing $WAV_PICK" | tee -a "$LOGFILE"
-            asterisk -rx "rpt localplay $NODE /var/lib/asterisk/sounds/en/custom/$WAV_PICK"
-        else
-            echo "$(date '+%F %T') Node $NODE busy — skipping" | tee -a "$LOGFILE"
-        fi
-
-        # Prevent repeat this hour
-        LAST_MINUTE_PLAYED="$CURRENT_MINUTE"
-    fi
-
-    sleep "$SLEEP_SECS"
+      if [ "$RXKEYED" -eq "0" ]; then
+        echo "$(date): Node $NODE is idle (RX not keyed). Playing announcement."
+        asterisk -rx "rpt localplay $NODE $WAVFILE"
+        echo "$(date): Announcement played. Sleeping 1 hour."
+        sleep $SLEEP_BETWEEN_PLAYS
+        break  # exit wait loop and check time again
+      else
+        echo "$(date): Node $NODE busy (RX keyed). Checking again in $CHECK_INTERVAL seconds."
+        sleep $CHECK_INTERVAL
+      fi
+    done
+  else
+    echo "$(date): Outside 7:30AM–7:30PM window. Sleeping $CHECK_INTERVAL seconds."
+    sleep $CHECK_INTERVAL
+  fi
 done
