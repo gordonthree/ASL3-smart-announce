@@ -6,9 +6,8 @@ This shell script automates playing periodic announcements, in a random order, o
 
 ## Features
 
-- Plays announcements once per hour (configurable).
+- Plays announcement once per hour (configurable).
 - Detects if the ASL3 node is currently busy before playing.
-- Rotates through multiple WAV files randomly.
 - Ability to set a specific time period to play announcements (i.e. turns off at night, doesn't play during a net, etc.)
 - Logs activity to a configurable log file.
 
@@ -31,7 +30,7 @@ This shell script automates playing periodic announcements, in a random order, o
    
    ```cd asl3-smart-announce```
    
- 3. Place your WAV files in ```/var/lib/asterisk/sounds/en/custom/```.
+ 3. Place your WAV files in ```/var/lib/asterisk/sounds/```.
     * Example files: ID.wav, ID2.wav, cowboy.wav, jessica.wav
  4. Edit the script configuration:
     Open ASL3-smart-announce.sh and set your ASL3 node number and WAV file list
@@ -71,13 +70,11 @@ sudo systemctl start asl3-smart-announce.service
   * ```tail -f /var/log/triathlon-announcer.log```
 
  ## Notes
-The script assumes WAV files are placed under /var/lib/asterisk/sounds/en/custom/ without file extensions in the configuration. WAV files must be 8000Hz mono WAV files of the proper format.
-
-You can customize the announcement frequency by adjusting ```SLEEP_SECS``` or modifying the script's time logic.
+The script assumes WAV files are placed under /var/lib/asterisk/sounds/ without file extensions in the configuration. WAV files must be 8000Hz mono WAV files of the proper format.
 
 Ensure the user running the script has permission to access the sound files and run Asterisk CLI commands.
 
-If you want the announcements to play over a repeater that is connected to the node (NOT ADVISABLE UNLESS IT IS YOUR REPEATER) change ```localplay``` to ```playback``` in the ```ASL3-smart-announce.sh``` file.
+If you don't want the announcements to play over a repeater that is connected to the node (ADVISABLE UNLESS IT IS YOUR REPEATER) change ```playback``` to ```localplay``` in the ```ASL3-smart-announce.sh``` file.
 
  ## Troubleshooting
 If announcements do not play, verify file paths and permissions.
