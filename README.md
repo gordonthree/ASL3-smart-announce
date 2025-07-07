@@ -9,6 +9,7 @@ This shell script automates playing periodic announcements, in a random order, o
 - Plays announcements once per hour (configurable).
 - Detects if the ASL3 node is currently busy before playing.
 - Rotates through multiple WAV files randomly.
+- Ability to set a specific time period to play announcements (i.e. turns off at night, doesn't play during a net, etc.)
 - Logs activity to a configurable log file.
 
 ---
