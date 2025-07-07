@@ -2,7 +2,7 @@
 
 ###########################################################
 ### https://github.com/GooseThings/ASL3-smart-announce/ ###
-###     Code by Goose - N8GMZ - MIT License - 202%      ###
+###     Code by Goose - N8GMZ - MIT License - 2025      ###
 ###########################################################
 
 LOGFILE="/var/log/ASL3-smart-announce.log"
