@@ -1,5 +1,13 @@
 #!/bin/bash
 
+###########################################################
+### https://github.com/GooseThings/ASL3-smart-announce/ ###
+###     Code by Goose - N8GMZ - MIT License - 202%      ###
+###########################################################
+
+LOGFILE="/var/log/ASL3-smart-announce.log"
+exec >> "$LOGFILE" 2>&1
+
 NODE=12345 #put your node number here
 WAVDIR=/var/lib/asterisk/sounds/en/custom/announcements  # Folder with .wav files
 CHECK_INTERVAL=60                              # seconds between idle checks
