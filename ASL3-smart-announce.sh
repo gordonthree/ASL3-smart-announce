@@ -1,54 +1,53 @@
 #!/bin/bash
+set -euo pipefail
 
-###########################################################
-### https://github.com/GooseThings/ASL3-smart-announce/ ###
-###     Code by Goose - N8GMZ - MIT License - 2025      ###
-###########################################################
+# --- USER CONFIG -------------------------------------------------
+NODE=64549
+WAVFILE="/var/lib/asterisk/sounds/triathlon2025"  # no .wav
+CHECK_INTERVAL=60          # seconds between RX checks
+SLEEP_BETWEEN_PLAYS=$((60*60))  # 1 h pause after each play
 
-LOGFILE="/var/log/ASL3-smart-announce.log"
-exec >> "$LOGFILE" 2>&1
-
-NODE=12345 #put your node number here
-WAVDIR=/var/lib/asterisk/sounds/en/custom/announcements  # Folder with .wav files
-CHECK_INTERVAL=60                              # seconds between idle checks
-SLEEP_BETWEEN_PLAYS=$((60 * 60))               # 1 hour between plays
-
-# Allowed play window: 7:30 AM to 7:30 PM - change to whatever you want
+# Allowed window (local time): 07:30 → 19:30
 START_HOUR=7
 START_MINUTE=30
 END_HOUR=19
 END_MINUTE=30
+# -----------------------------------------------------------------
 
-while true; do
-  CURRENT_MINUTES=$(date +%H:%M | awk -F: '{ print ($1 * 60) + $2 }')
-  START_MINUTES=$((START_HOUR * 60 + START_MINUTE))
-  END_MINUTES=$((END_HOUR * 60 + END_MINUTE))
+start_minutes=$((START_HOUR * 60 + START_MINUTE))
+end_minutes=$((END_HOUR   * 60 + END_MINUTE))
 
-  if (( CURRENT_MINUTES >= START_MINUTES && CURRENT_MINUTES <= END_MINUTES )); then
-    echo "$(date): Within allowed play window."
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*"; }
 
-    # Wait until repeater is not RX keyed
-    while true; do
-      RXKEYED=$(asterisk -rx "rpt show variables $NODE" | grep RPT_RXKEYED | awk -F= '{print $2}' | tr -d '\r')
-      RXKEYED=${RXKEYED:-1}  # default to busy if variable missing
+in_window() {
+  local now
+  now=$(date +%H:%M)
+  local mins=$((10#${now%:*} * 60 + 10#${now#*:}))
+  (( mins >= start_minutes && mins <= end_minutes ))
+}
 
-      if [ "$RXKEYED" -eq "0" ]; then
-        # Pick a random WAV file from the directory
-        WAVFILE=$(find "$WAVDIR" -type f -name '*.wav' | shuf -n 1)
-        BASENAME=$(basename "$WAVFILE")
+while :; do
+  if in_window; then
+    log "Within play window."
 
-        echo "$(date): Node $NODE is idle. Playing random file: $BASENAME"
-        asterisk -rx "rpt playback $NODE /var/lib/asterisk/sounds/en/custom/announcement/$BASENAME"       # For some reason ASL3 has problems without the full path
-        echo "$(date): Playback done. Sleeping 1 hour."
-        sleep $SLEEP_BETWEEN_PLAYS
-        break
-      else
-        echo "$(date): Node $NODE busy. Rechecking in $CHECK_INTERVAL seconds."
-        sleep $CHECK_INTERVAL
+    # Wait until node is idle
+    while :; do
+      RXKEYED=$(asterisk -rx "rpt show variables $NODE" | awk -F= '/RPT_RXKEYED/{print $2}' | tr -d '\r')
+      RXKEYED=${RXKEYED:-1}
+
+      if [[ "$RXKEYED" == 0 ]]; then
+        log "Node $NODE idle. Playing $WAVFILE."
+        asterisk -rx "rpt playback $NODE \"$WAVFILE\""
+        log "Playback done. Sleeping $((SLEEP_BETWEEN_PLAYS/60)) min."
+        sleep "$SLEEP_BETWEEN_PLAYS"
+        break   # go back to outer loop to re‑check time window
       fi
+
+      log "Node busy (RXKEYED=1). Rechecking in ${CHECK_INTERVAL}s."
+      sleep "$CHECK_INTERVAL"
     done
   else
-    echo "$(date): Outside 7:30AM–7:30PM window. Sleeping $CHECK_INTERVAL seconds."
-    sleep $CHECK_INTERVAL
+    log "Outside 07:30–19:30 window. Sleeping ${CHECK_INTERVAL}s."
+    sleep "$CHECK_INTERVAL"
   fi
 done
