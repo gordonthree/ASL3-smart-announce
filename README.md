@@ -40,8 +40,8 @@ This shell script automates playing periodic announcements, in a random order, o
  ### Run manually in the background
 ```nohup ./announce.sh > /var/log/asl3-announcer.log 2>&1 &```
  ### Run via systemd service (recommended)
-   Create /etc/systemd/system/asl3-smart-announce.service with:
-
+   Create /etc/systemd/system/asl3-smart-announce.service with: 
+ 
 ```
 [Unit]
 Description=ASL3 Smart Announcer Script
@@ -64,6 +64,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable asl3-smart-announce.service
 sudo systemctl start asl3-smart-announce.service
 ```
+ ### Give log the proper permissions
+ * ```sudo touch /var/log/ASL-smart-announce.log```
+ * ```sudo chown asterisk:asterisk /var/log/ASL-smart-announce.log```
+ ### Monitor log as it runs:
+  * ```tail -f /var/log/triathlon-announcer.log```
+
  ## Notes
 The script assumes WAV files are placed under /var/lib/asterisk/sounds/en/custom/ without file extensions in the configuration. WAV files must be 8000Hz mono WAV files of the proper format.
 
