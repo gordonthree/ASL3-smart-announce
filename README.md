@@ -17,7 +17,7 @@ This shell script automates playing periodic announcements on an AllStarLink 3 (
 
 - Linux system with ASL3 and Asterisk installed.
 - `bash` shell.
-- Properly formatted WAV files stored in `/var/lib/asterisk/sounds/en/custom/`.
+- Properly formatted WAV files stored in `/var/lib/asterisk/sounds/`.
 - User permissions to run Asterisk CLI commands.
 
 ---
